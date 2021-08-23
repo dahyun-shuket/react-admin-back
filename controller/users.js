@@ -10,11 +10,12 @@ module.exports = {
     async create(req, res, next) {
         let loginId = req.body.LOGINID;
         let pwd = req.body.PWD;
+        let userType = req.body.USERTYPE;
 
         let salt = genSaltSync(10);
         pwd = hashSync(pwd, salt);
 
-        let result = await userService.create(loginId, pwd);
+        let result = await userService.create(loginId, pwd, userType);
         if(!result) {
             res.json({
                 result: 'fail',
@@ -99,13 +100,31 @@ module.exports = {
 
     // 유저 리스트
     async list(req, res, next){
-        //let seq = req.body.SEQ;
-        const result = await userService.list();
+        let usertype = req.body.USERTYPE;
+        console.log(req.body.USERTYPE);
+
+        const userLoginId = (req.body.LOGINID) ? req.body.LOGINID : '';
+        const result = await userService.list(usertype, userLoginId);
         
-        res.json({
-            result: (result === null) ? 'fail' : 'success',
-            data: result
-        })
+        // let userLoginId = (req.body.LOGINID) ? req.body.LOGINID : '';
+        // console.log(userLoginId);
+        
+        // return res.json({
+        //     // result: (result === null) ? 'fail' : 'success',
+        //     // data: result
+        //     result:'success',
+        //     data: {
+        //         data: result
+        //     }
+        // })
+        return res.json({
+            result: "success",
+            data: {
+                list: result,
+                // totalCount: totalCount
+            }
+        });
+
     },
 
     // 아이디 중복 체크

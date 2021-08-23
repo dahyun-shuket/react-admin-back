@@ -2,9 +2,9 @@ const pool = require('../config/database');
 
 module.exports = class userService{
     // 유저 생성
-    static async create(loginId, pwd) {
+    static async create(loginId, pwd, userType) {
         try {
-            const [rows, fileds] = await pool.query(`INSERT INTO login(LOGINID, PWD,CREATED,MODIFIED, ACTIVE) VALUES (?,?,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),'Y')`,[loginId, pwd]);
+            const [rows, fileds] = await pool.query(`INSERT INTO USERTABLE(LOGINID, PWD, USERTYPE, CREATED,MODIFIED, ACTIVE) VALUES (?,?,?,CURRENT_TIMESTAMP(),CURRENT_TIMESTAMP(),'Y')`,[loginId, pwd, userType]);
             return rows;
         } catch (error) {
             console.log("create model Error ! : " + error);
@@ -13,7 +13,7 @@ module.exports = class userService{
     // seq 정보 갖고오기
     static async getUser(seq){
         try {
-            const [rows, fields] = await pool.query(`SELECT SEQ, LOGINID, PWD, CREATED,MODIFIED, ACTIVE FROM login WHERE SEQ=? `, 
+            const [rows, fields] = await pool.query(`SELECT SEQ, LOGINID, PWD, CREATED,MODIFIED, ACTIVE FROM USERTABLE WHERE SEQ=? `, 
             [seq]
             );
             if(rows.length > 0){
@@ -32,7 +32,7 @@ module.exports = class userService{
     static async updateUser(seq,loginId, pwd) {
         try {
             //const [rows, fields] = await pool.query(`UPDATE login SEQ, LOGINID, PWD, CREATED, MODIFIED, ACTIVE SET WHERE SEQ=?`, [seq, loginId, pwd]);
-            const [rows, fields] = await pool.query(`UPDATE login SET LOGINID=?, PWD=?, MODIFIED=NOW() WHERE SEQ=?`, [loginId, pwd, seq]);
+            const [rows, fields] = await pool.query(`UPDATE USERTABLE SET LOGINID=?, PWD=?, MODIFIED=NOW() WHERE SEQ=?`, [loginId, pwd, seq]);
             return rows;
         } catch (error) {
             return null;
@@ -50,7 +50,7 @@ module.exports = class userService{
     // 유저 비밀번호 수정
     static async updatePwd(seq, pwd){
         try {
-            const [rows, fields] = await pool.query(`UPDATE LOGIN SET PWD=? WHERE SEQ=?`, [pwd, seq]);
+            const [rows, fields] = await pool.query(`UPDATE USERTABLE SET PWD=? WHERE SEQ=?`, [pwd, seq]);
             return rows;
 
         } catch (error) {
@@ -58,18 +58,28 @@ module.exports = class userService{
         }
     };
     // 유저 리스트
-    static async list(){
+    static async list(usertype, userLoginId){
         try {
-            const [rows, fields] = await pool.query(`SELECT SEQ, LOGINID, PWD,CREATED,MODIFIED, ACTIVE FROM LOGIN ORDER BY SEQ DESC`, []);
+            const [rows, fields] = await pool.query(`SELECT SEQ, LOGINID, PWD,USERTYPE, CREATED, MODIFIED, ACTIVE FROM USERTABLE WHERE ACTIVE='Y' AND
+            USERTYPE='${usertype}' ${(userLoginId) ? `AND LOGINID LIKE '%${userLoginId}%'`:''}  ORDER BY SEQ DESC`, []);
             return rows;
         } catch (error) {
             return null;
         }
     };
+    // static async list(usertype, userLoginId){
+    //     try {
+    //         const [rows, fields] = await pool.query(`SELECT SEQ, LOGINID, PWD,USERTYPE, CREATED, MODIFIED, ACTIVE FROM USERTABLE WHERE ACTIVE='Y' AND
+    //         USERTYPE='${usertype}' ${(userLoginId && userLoginId != '') ? 'AND LOGINID LIKE \'%' + userLoginId + '%\'' : ''}  ORDER BY SEQ DESC`, []);
+    //         return rows;
+    //     } catch (error) {
+    //         return null;
+    //     }
+    // };
     // 아이디 중복 체크
     static async idCheck(loginId){
         try {
-            const [rows, fields] = await pool.query(`SELECT LOGINID FROM LOGIN WHERE LOGINID=?`, [loginId]);
+            const [rows, fields] = await pool.query(`SELECT LOGINID FROM USERTABLE WHERE LOGINID=?`, [loginId]);
             let checkUser = new Object();
             checkUser.tf = false; 
             if(rows[0] === undefined){
@@ -88,7 +98,7 @@ module.exports = class userService{
     // 회원탈퇴
     static async remove(seq) {
         try {
-            const [rows, fields] = await pool.query(`UPDATE LOGIN SET MODIFIED=NOW(), ACTIVE='N' WHERE SEQ=?`, [seq]);
+            const [rows, fields] = await pool.query(`UPDATE USERTABLE SET MODIFIED=NOW(), ACTIVE='N' WHERE SEQ=?`, [seq]);
             return rows;
         } catch (error) {
             return null;
